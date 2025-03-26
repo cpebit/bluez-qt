@@ -10,6 +10,7 @@
 #define BLUEZQT_GATTCHARACTERISTICADAPTOR_H
 
 #include <QDBusAbstractAdaptor>
+#include <QDBusMessage>
 
 class QDBusObjectPath;
 
@@ -24,6 +25,8 @@ class GattCharacteristicAdaptor : public QDBusAbstractAdaptor
     Q_PROPERTY(QString UUID READ uuid)
     Q_PROPERTY(QDBusObjectPath Service READ service)
     Q_PROPERTY(QStringList Flags READ flags)
+    Q_PROPERTY(bool WriteAcquired READ writeAcquired)
+    Q_PROPERTY(bool NotifyAcquired READ notifyAcquired)
 
 public:
     explicit GattCharacteristicAdaptor(GattCharacteristic *parent);
@@ -34,11 +37,17 @@ public:
 
     QStringList flags() const;
 
+    bool writeAcquired() const;
+
+    bool notifyAcquired() const;
+
 public Q_SLOTS:
     QByteArray ReadValue(const QVariantMap &options);
     void WriteValue(const QByteArray &value, const QVariantMap &options);
     void StartNotify();
     void StopNotify();
+    void AcquireWrite(const QVariantMap &options, const QDBusMessage &message);
+    void AcquireNotify(const QVariantMap &options, const QDBusMessage &message);
 
 private:
     GattCharacteristic *m_gattCharacteristic;

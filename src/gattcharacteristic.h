@@ -14,6 +14,8 @@
 #include <QDBusObjectPath>
 
 #include <memory>
+#include <QDBusMessage>
+#include <QLocalSocket>
 
 namespace BluezQt
 {
@@ -53,17 +55,17 @@ public:
     /**
      * Reads the value of the characteristic.
      */
-    QByteArray readValue();
+    QByteArray readValue(const QVariantMap &options);
 
     /**
      * Writes the value of the characteristic.
      */
-    void writeValue(const QByteArray &value);
+    void writeValue(const QByteArray &value, const QVariantMap &options);
 
     /**
      * Provide a read callback to operate in *pull* mode.
      */
-    using ReadCallback = std::function<QByteArray()>;
+    using ReadCallback = std::function<QByteArray(uint, uint, QDBusObjectPath, QString)>;
     void setReadCallback(ReadCallback callback);
 
     /**
@@ -112,11 +114,19 @@ public:
      */
     bool isNotifying() const;
 
+    void acquireWrite(const QVariantMap &options, const QDBusMessage &message);
+
+    void acquireNotify(const QVariantMap &options, const QDBusMessage &message);
+
 Q_SIGNALS:
     /**
      * Indicates that a value was written.
      */
-    void valueWritten(const QByteArray &value);
+    void valueWritten(const QByteArray &value, uint offset, uint mtu, QString type, QDBusObjectPath device, QString link, bool prepareAuthorize);
+
+    void notifySocket(const QDBusObjectPath &device, uint mtu, QLocalSocket *socket);
+
+    void writeSocket(const QDBusObjectPath &device, uint mtu, QLocalSocket *socket);
 
 protected:
     /**

@@ -7,9 +7,12 @@
  */
 
 #include "gattcharacteristic.h"
+
+#include <unistd.h>
+
 #include "gattcharacteristic_p.h"
 #include "gattservice.h"
-#include "utils.h"
+#include <sys/socket.h>
 
 namespace BluezQt
 {
@@ -26,24 +29,30 @@ GattCharacteristic::GattCharacteristic(const QString &uuid, const QStringList &f
 
 GattCharacteristic::~GattCharacteristic() = default;
 
-QByteArray GattCharacteristic::readValue()
+QByteArray GattCharacteristic::readValue(const QVariantMap &options)
 {
+    const auto offset = options.value(QStringLiteral("offset")).toUInt();
+    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
+    const auto link = options.value(QStringLiteral("link")).toString();
+
     if (d->m_readCallback) {
-        d->m_value = d->m_readCallback();
+        return d->m_readCallback(offset, mtu, device, link);
     }
 
-    return d->m_value;
+    return {};
 }
 
-void GattCharacteristic::writeValue(const QByteArray &value)
+void GattCharacteristic::writeValue(const QByteArray &value, const QVariantMap &options)
 {
-    d->m_value = value;
+    const auto offset = options.value(QStringLiteral("offset")).toUInt();
+    const auto type = options.value(QStringLiteral("type")).toString();
+    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
+    const auto link = options.value(QStringLiteral("link")).toString();
+    const auto prepareAuthorize = options.value(QStringLiteral("prepare-authorize")).toBool();
 
-    if (isNotifying()) {
-        d->emitPropertyChanged({{QLatin1String("Value"), value}});
-    }
-
-    Q_EMIT valueWritten(d->m_value);
+    Q_EMIT valueWritten(value, offset, mtu, type, device, link, prepareAuthorize);
 }
 
 QString GattCharacteristic::uuid() const
@@ -86,6 +95,48 @@ QDBusObjectPath GattCharacteristic::objectPath() const
 void GattCharacteristic::setReadCallback(ReadCallback callback)
 {
     d->m_readCallback = callback;
+}
+
+void GattCharacteristic::acquireWrite(const QVariantMap &options, const QDBusMessage &message) {
+    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
+
+    int fds[2];
+    if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, fds) == -1) {
+        message.createErrorReply(QDBusError::Failed, QStringLiteral("pipe() failed"));
+        return;
+    }
+
+    auto socket = new QLocalSocket();
+    socket->setSocketDescriptor(fds[0]);
+
+    Q_EMIT writeSocket(device, mtu, socket);
+
+    message.createReply(QVariantList{
+       QVariant::fromValue(QDBusUnixFileDescriptor(fds[1])),
+       QVariant::fromValue(mtu)
+   });
+}
+
+void GattCharacteristic::acquireNotify(const QVariantMap &options, const QDBusMessage &message) {
+    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
+
+    int fds[2];
+    if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, fds) == -1) {
+        message.createErrorReply(QDBusError::Failed, QStringLiteral("pipe() failed"));
+        return;
+    }
+
+    auto socket = new QLocalSocket();
+    socket->setSocketDescriptor(fds[0]);
+
+    Q_EMIT notifySocket(device, mtu, socket);
+
+    message.createReply(QVariantList{
+        QVariant::fromValue(QDBusUnixFileDescriptor(fds[1])),
+        QVariant::fromValue(mtu)
+    });
 }
 
 } // namespace BluezQt

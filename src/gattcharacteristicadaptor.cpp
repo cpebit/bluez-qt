@@ -33,14 +33,22 @@ QStringList GattCharacteristicAdaptor::flags() const
     return m_gattCharacteristic->flags();
 }
 
-QByteArray GattCharacteristicAdaptor::ReadValue(const QVariantMap & /*options*/)
-{
-    return m_gattCharacteristic->readValue();
+bool GattCharacteristicAdaptor::writeAcquired() const {
+    return true;
 }
 
-void GattCharacteristicAdaptor::WriteValue(const QByteArray &value, const QVariantMap & /*options*/)
+bool GattCharacteristicAdaptor::notifyAcquired() const {
+    return true;
+}
+
+QByteArray GattCharacteristicAdaptor::ReadValue(const QVariantMap &options)
 {
-    m_gattCharacteristic->writeValue(value);
+    return m_gattCharacteristic->readValue(options);
+}
+
+void GattCharacteristicAdaptor::WriteValue(const QByteArray &value, const QVariantMap &options)
+{
+    m_gattCharacteristic->writeValue(value, options);
 }
 
 void GattCharacteristicAdaptor::StartNotify()
@@ -51,6 +59,16 @@ void GattCharacteristicAdaptor::StartNotify()
 void GattCharacteristicAdaptor::StopNotify()
 {
     m_gattCharacteristic->stopNotify();
+}
+
+void GattCharacteristicAdaptor::AcquireWrite(const QVariantMap &options, const QDBusMessage &message)
+{
+    m_gattCharacteristic->acquireWrite(options, message);
+}
+
+void GattCharacteristicAdaptor::AcquireNotify(const QVariantMap &options, const QDBusMessage &message)
+{
+    m_gattCharacteristic->acquireNotify(options, message);
 }
 
 } // namespace BluezQt
