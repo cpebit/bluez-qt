@@ -44,7 +44,7 @@ LeServer::LeServer(Manager *manager, QObject *parent)
     GattDescriptor::createUserDescription(QLatin1String("MyCharacteristic"), characteristic);
 
     m_notifyingCharacteristic =
-        new GattCharacteristic(QStringLiteral("ad10e100-d902-11e8-9f8b-f2801f1b9fd1"), {QStringLiteral("read"), QStringLiteral("notify")}, service);
+        new GattCharacteristic(QStringLiteral("ad10e100-d902-11e8-9f8b-f2801f1b9fd1"), {QStringLiteral("write"), QStringLiteral("notify")}, service);
 
     auto call2 = m_manager->usableAdapter()->gattManager()->registerApplication(application);
 
@@ -59,9 +59,17 @@ LeServer::LeServer(Manager *manager, QObject *parent)
     m_characteristicWriteTimer.setSingleShot(false);
     m_characteristicWriteTimer.start();
 
-    static int charValue = 1;
-    QObject::connect(&m_characteristicWriteTimer, &QTimer::timeout, [this]() {
-        m_notifyingCharacteristic->writeValue(QByteArray::number(charValue++));
+    // static int charValue = 1;
+    // QObject::connect(&m_characteristicWriteTimer, &QTimer::timeout, [this]() {
+    //     m_notifyingCharacteristic->writeValue(QByteArray::number(charValue++));
+    // });
+
+    connect(m_notifyingCharacteristic, &GattCharacteristic::notifySocket, this, [](const QDBusObjectPath &device, uint mtu, QLocalSocket *socket) {
+        qInfo() << "Notifying socket" << device.path() << mtu;
+    });
+
+    connect(m_notifyingCharacteristic, &GattCharacteristic::writeSocket, this, [](const QDBusObjectPath &device, uint mtu, QLocalSocket *socket) {
+        qInfo() << "Write socket" << device.path() << mtu;
     });
 }
 
