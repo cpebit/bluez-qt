@@ -55,21 +55,22 @@ LeServer::LeServer(Manager *manager, QObject *parent)
         }
     });
 
-    m_characteristicWriteTimer.setInterval(std::chrono::seconds(1));
-    m_characteristicWriteTimer.setSingleShot(false);
-    m_characteristicWriteTimer.start();
-
-    // static int charValue = 1;
-    // QObject::connect(&m_characteristicWriteTimer, &QTimer::timeout, [this]() {
-    //     m_notifyingCharacteristic->writeValue(QByteArray::number(charValue++));
-    // });
-
-    connect(m_notifyingCharacteristic, &GattCharacteristic::notifySocket, this, [](const QDBusObjectPath &device, uint mtu, QLocalSocket *socket) {
-        qInfo() << "Notifying socket" << device.path() << mtu;
+    connect(m_notifyingCharacteristic, &GattCharacteristic::newNotifyConnection, this, [this](const QDBusObjectPath &device, uint mtu, std::shared_ptr<QLocalSocket> socket) {
+        qInfo() << "New notifying socket" << device.path() << mtu;
+        notifySockets.append(socket);
     });
 
-    connect(m_notifyingCharacteristic, &GattCharacteristic::writeSocket, this, [](const QDBusObjectPath &device, uint mtu, QLocalSocket *socket) {
-        qInfo() << "Write socket" << device.path() << mtu;
+    connect(m_notifyingCharacteristic, &GattCharacteristic::newWriteConnection, this, [this](const QDBusObjectPath &device, uint mtu, std::shared_ptr<QLocalSocket> socket) {
+        qInfo() << "New write socket" << device.path() << mtu;
+        writeSockets.append(socket);
+        connect(socket.get(), &QLocalSocket::readyRead, this, [this, socket] {
+            const auto data = socket->readAll();
+            qInfo() << "Data write" << data.toHex();
+            for (const auto notifySocket : notifySockets) {
+                notifySocket->write(QStringLiteral("echo: ").toUtf8() + data);
+                notifySocket->flush();
+            }
+        });
     });
 }
 

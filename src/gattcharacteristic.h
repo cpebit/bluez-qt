@@ -124,9 +124,9 @@ Q_SIGNALS:
      */
     void valueWritten(const QByteArray &value, uint offset, uint mtu, QString type, QDBusObjectPath device, QString link, bool prepareAuthorize);
 
-    void notifySocket(const QDBusObjectPath &device, uint mtu, QLocalSocket *socket);
+    void newNotifyConnection(const QDBusObjectPath &device, uint mtu, std::shared_ptr<QLocalSocket> socket);
 
-    void writeSocket(const QDBusObjectPath &device, uint mtu, QLocalSocket *socket);
+    void newWriteConnection(const QDBusObjectPath &device, uint mtu, std::shared_ptr<QLocalSocket> socket);
 
 protected:
     /**

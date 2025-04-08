@@ -31,7 +31,8 @@ private:
     BluezQt::Manager *m_manager;
     BluezQt::GattCharacteristic *m_notifyingCharacteristic = nullptr;
 
-    QTimer m_characteristicWriteTimer; // < Used to write to characteristic with 'notify' flag set.
+    QList<std::shared_ptr<QLocalSocket>> writeSockets;
+    QList<std::shared_ptr<QLocalSocket>> notifySockets;
 };
 
 #endif

@@ -98,46 +98,48 @@ void GattCharacteristic::setReadCallback(ReadCallback callback)
 }
 
 void GattCharacteristic::acquireWrite(const QVariantMap &options, const QDBusMessage &message) {
-    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto mtu = static_cast<quint16>(options.value(QStringLiteral("mtu")).toUInt());
     const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
 
     int fds[2];
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, fds) == -1) {
-        message.createErrorReply(QDBusError::Failed, QStringLiteral("pipe() failed"));
+        QDBusConnection::systemBus().send(message.createErrorReply(QDBusError::Failed, QStringLiteral("socketpair() failed")));
         return;
     }
 
-    auto socket = new QLocalSocket();
+    auto socket = std::make_shared<QLocalSocket>();
     socket->setSocketDescriptor(fds[0]);
 
-    Q_EMIT writeSocket(device, mtu, socket);
+    QDBusConnection::systemBus().send(message.createReply(QVariantList{
+        QVariant::fromValue(QDBusUnixFileDescriptor(fds[1])),
+        QVariant::fromValue(mtu)
+    }));
 
-    message.createReply(QVariantList{
-       QVariant::fromValue(QDBusUnixFileDescriptor(fds[1])),
-       QVariant::fromValue(mtu)
-   });
+    Q_EMIT newWriteConnection(device, mtu, socket);
 }
 
 void GattCharacteristic::acquireNotify(const QVariantMap &options, const QDBusMessage &message) {
-    const auto mtu = options.value(QStringLiteral("mtu")).toUInt();
+    const auto mtu = static_cast<quint16>(options.value(QStringLiteral("mtu")).toUInt());
     const auto device = options.value(QStringLiteral("device")).value<QDBusObjectPath>();
 
     int fds[2];
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, fds) == -1) {
-        message.createErrorReply(QDBusError::Failed, QStringLiteral("pipe() failed"));
+        QDBusConnection::systemBus().send(message.createErrorReply(QDBusError::Failed, QStringLiteral("socketpair() failed")));
         return;
     }
 
-    auto socket = new QLocalSocket();
+    auto socket = std::make_shared<QLocalSocket>();
     socket->setSocketDescriptor(fds[0]);
 
-    Q_EMIT notifySocket(device, mtu, socket);
-
-    message.createReply(QVariantList{
+    QDBusConnection::systemBus().send(message.createReply(QVariantList{
         QVariant::fromValue(QDBusUnixFileDescriptor(fds[1])),
         QVariant::fromValue(mtu)
-    });
+    }));
+
+    Q_EMIT newNotifyConnection(device, mtu, socket);
 }
+
+
 
 } // namespace BluezQt
 
