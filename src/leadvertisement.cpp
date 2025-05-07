@@ -11,9 +11,9 @@
 
 namespace BluezQt
 {
-LEAdvertisement::LEAdvertisement(const QStringList &serviceUuids, QObject *parent)
+LEAdvertisement::LEAdvertisement(const QStringList &serviceUuids, const QString &localName, QObject *parent)
     : QObject(parent)
-    , d(new LEAdvertisementPrivate(serviceUuids))
+    , d(new LEAdvertisementPrivate(serviceUuids, localName))
 {
 }
 
@@ -22,6 +22,10 @@ LEAdvertisement::~LEAdvertisement() = default;
 QDBusObjectPath LEAdvertisement::objectPath() const
 {
     return d->m_objectPath;
+}
+
+QString LEAdvertisement::localName() const {
+    return d->m_localName;
 }
 
 QStringList LEAdvertisement::serviceUuids() const

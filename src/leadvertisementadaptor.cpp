@@ -32,6 +32,11 @@ QStringList LEAdvertisementAdaptor::serviceUuids() const
     return m_advertisement->serviceUuids();
 }
 
+QString LEAdvertisementAdaptor::localName() const {
+    return m_advertisement->localName();
+}
+
+
 QHash<QString, QVariant> LEAdvertisementAdaptor::serviceData() const
 {
     // bluez wants the value wrapped into a variant...

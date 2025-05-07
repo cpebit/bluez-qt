@@ -10,8 +10,8 @@
 
 namespace BluezQt
 {
-LEAdvertisementPrivate::LEAdvertisementPrivate(const QStringList &serviceUuids)
-    : m_serviceUuids(serviceUuids)
+LEAdvertisementPrivate::LEAdvertisementPrivate(const QStringList &serviceUuids, const QString &localName)
+    : m_serviceUuids(serviceUuids), m_localName(localName)
 {
     static uint8_t advNumber = 0;
     QString objectPath = QLatin1String("/org/bluez/lead") + QString::number(advNumber++);

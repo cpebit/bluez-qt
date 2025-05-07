@@ -28,7 +28,7 @@ LeServer::LeServer(Manager *manager, QObject *parent)
     : QObject(parent)
     , m_manager(manager)
 {
-    auto advertisement = new LEAdvertisement({QStringLiteral("ad100000-d901-11e8-9f8b-f2801f1b9fd1")}, this);
+    auto advertisement = new LEAdvertisement({QStringLiteral("ad100000-d901-11e8-9f8b-f2801f1b9fd1")}, QStringLiteral("AAWireless-test"), this);
     auto call = m_manager->usableAdapter()->leAdvertisingManager()->registerAdvertisement(advertisement);
     connect(call, &PendingCall::finished, this, [](BluezQt::PendingCall *call) {
         if (call->error()) {
@@ -66,7 +66,7 @@ LeServer::LeServer(Manager *manager, QObject *parent)
         connect(socket.get(), &QLocalSocket::readyRead, this, [this, socket] {
             const auto data = socket->readAll();
             qInfo() << "Data write" << data.toHex();
-            for (const auto notifySocket : notifySockets) {
+            for (const auto& notifySocket : notifySockets) {
                 notifySocket->write(QStringLiteral("echo: ").toUtf8() + data);
                 notifySocket->flush();
             }

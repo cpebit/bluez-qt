@@ -36,7 +36,7 @@ public:
      *
      * @param parent
      */
-    explicit LEAdvertisement(const QStringList &serviceUuids, QObject *parent = nullptr);
+    explicit LEAdvertisement(const QStringList &serviceUuids, const QString &localName, QObject *parent = nullptr);
 
     /**
      * Destroys a LEAdvertisement object.
@@ -48,7 +48,9 @@ public:
      *
      * @return UUIDs of the advertisement
      */
-    virtual QStringList serviceUuids() const;
+    QStringList serviceUuids() const;
+
+    QString localName() const;
 
     /**
      * Returns the service data included in the advertisement.

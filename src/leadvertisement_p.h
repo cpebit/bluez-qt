@@ -16,8 +16,9 @@ namespace BluezQt
 class LEAdvertisementPrivate
 {
 public:
-    explicit LEAdvertisementPrivate(const QStringList &serviceUuids);
+    explicit LEAdvertisementPrivate(const QStringList &serviceUuids, const QString &localName);
     QStringList m_serviceUuids;
+    QString m_localName;
     QDBusObjectPath m_objectPath;
     QHash<QString, QByteArray> m_serviceData;
     QHash<quint16, QByteArray> m_manufacturerData;
